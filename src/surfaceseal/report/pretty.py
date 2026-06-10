@@ -36,7 +36,7 @@ def render(verdict: Verdict) -> str:
         advisory = _c(" (advisory)", "90") if f.advisory else ""
         lines.append(f"{tag}{advisory}  {f.surface.path}:{f.line}  [{f.rule_id}] {f.message}")
         if f.evidence:
-            lines.append(f"        ↳ {f.evidence}")
+            lines.append(f"        -> {f.evidence}")
     verdict_word = _c("BLOCK", "31") if crit else _c("REVIEW", "33")
     lines.append("")
     lines.append(f"{verdict_word}  {crit} critical, {warn} warning  (exit {verdict.exit_code})")

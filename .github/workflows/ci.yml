@@ -1,0 +1,41 @@
+name: ci
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install (with dev extras)
+        run: python -m pip install -e ".[dev]"
+      - name: Lint
+        run: python -m ruff check .
+      - name: Test
+        run: python -m pytest -q
+
+  dogfood:
+    # surfaceseal gates its own control-surface changes (eat our own dog food).
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install -e .
+      - name: surfaceseal self-scan (diff against base)
+        run: |
+          BASE="${{ github.event.pull_request.base.sha || 'HEAD~1' }}"
+          surfaceseal scan --diff --base "$BASE" --exclude 'tests/fixtures/**'

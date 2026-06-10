@@ -59,6 +59,29 @@ surfaceseal init
 surfaceseal scan --baseline
 ```
 
+## Use as a GitHub Action
+
+Gate every pull request — a poisoned control-surface change fails the check:
+
+```yaml
+# .github/workflows/surfaceseal.yml
+name: surfaceseal
+on: pull_request
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: leagames0221-sys/surfaceseal@master
+        # with:
+        #   fail-on-warning: "true"   # also fail on advisory/warning findings
+```
+
+`surfaceseal init` first, commit `.surfaceseal-allow.toml` + `.surfaceseal-baseline.json`,
+and the gate only flags what a PR *introduces* on top of that accepted baseline.
+
 ## Limitations
 
 - **Instruction-injection detection is advisory and lossy.** Natural-language

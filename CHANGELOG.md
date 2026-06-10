@@ -26,3 +26,11 @@ All notable changes to this project are documented here. Format loosely follows
     `AGENTS.md` (capped at WARNING, never gates on its own).
   - `report/sarif`: SARIF 2.1.0 output (`scan --format sarif`); advisory → `note`.
   - 37 tests pass, ruff clean.
+- Phase 3 (distribution + hardening):
+  - GitHub Action (`action.yml`, composite), CI (`ci.yml` test matrix + self-dogfood
+    gate), `gitleaks.yml`, `.pre-commit-config.yaml`, CONTRIBUTING.
+  - `--exclude GLOB` (repeatable, trailing `/**`) so a repo keeps its own test
+    fixtures / vendored samples out of the gate.
+  - Fix: pretty reporter crashed on non-UTF-8 consoles (Windows cp932) when a finding
+    carried non-ASCII evidence — output is now ASCII-chrome + UTF-8/replace stdout.
+  - 43 tests pass, ruff clean.

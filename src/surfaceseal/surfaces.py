@@ -52,6 +52,24 @@ def _normalize(path: str) -> str:
     return p
 
 
+def path_excluded(path: str, patterns: list[str]) -> bool:
+    """True if ``path`` matches any exclude glob.
+
+    Supports a trailing ``/**`` recursive prefix match (e.g. ``tests/fixtures/**``)
+    in addition to plain :func:`fnmatch` patterns. Lets a repo keep poisoned test
+    fixtures or vendored samples out of its own gate.
+    """
+    norm = _normalize(path)
+    for pat in patterns:
+        if pat.endswith("/**"):
+            prefix = pat[:-3]
+            if norm == prefix or norm.startswith(prefix + "/"):
+                return True
+        elif fnmatch(norm, pat):
+            return True
+    return False
+
+
 def classify(path: str, rules: list[SurfaceRule]) -> SurfaceRule | None:
     """Return the first matching surface rule for ``path``, or ``None``.
 

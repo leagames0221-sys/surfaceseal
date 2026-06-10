@@ -18,7 +18,7 @@ from .allowlist import Allowlist
 from .core import baseline, engine
 from .core.models import ChangeKind, ChangeUnit, Surface
 from .report import pretty, sarif
-from .surfaces import SurfaceRule, classify, load_rules
+from .surfaces import SurfaceRule, classify, load_rules, path_excluded
 
 
 def _unit_from(
@@ -28,9 +28,13 @@ def _unit_from(
     return ChangeUnit(surface=surface, fmt=rule.format, head_text=head_text, base_text=base_text)
 
 
-def _units_from_diff(base: str, cwd: str, rules: list[SurfaceRule]) -> list[ChangeUnit]:
+def _units_from_diff(
+    base: str, cwd: str, rules: list[SurfaceRule], excludes: list[str]
+) -> list[ChangeUnit]:
     units: list[ChangeUnit] = []
     for entry in gitdiff.changed_files(base, cwd):
+        if path_excluded(entry.path, excludes):
+            continue
         rule = classify(entry.path, rules)
         if rule is None:
             continue
@@ -40,9 +44,11 @@ def _units_from_diff(base: str, cwd: str, rules: list[SurfaceRule]) -> list[Chan
     return units
 
 
-def _units_from_disk(cwd: str, rules: list[SurfaceRule]) -> list[ChangeUnit]:
+def _units_from_disk(cwd: str, rules: list[SurfaceRule], excludes: list[str]) -> list[ChangeUnit]:
     units: list[ChangeUnit] = []
     for path in gitdiff.tracked_files(cwd):
+        if path_excluded(path, excludes):
+            continue
         rule = classify(path, rules)
         if rule is None:
             continue
@@ -53,11 +59,15 @@ def _units_from_disk(cwd: str, rules: list[SurfaceRule]) -> list[ChangeUnit]:
     return units
 
 
-def _units_from_baseline(cwd: str, rules: list[SurfaceRule]) -> list[ChangeUnit]:
+def _units_from_baseline(
+    cwd: str, rules: list[SurfaceRule], excludes: list[str]
+) -> list[ChangeUnit]:
     """Build DRIFTED units for in-scope files new or changed vs the pinned baseline."""
     pinned = baseline.load(cwd)
     units: list[ChangeUnit] = []
     for path in gitdiff.tracked_files(cwd):
+        if path_excluded(path, excludes):
+            continue
         rule = classify(path, rules)
         if rule is None:
             continue
@@ -79,10 +89,11 @@ def _cmd_scan(args: argparse.Namespace) -> int:
     rules = load_rules(cwd)
     allow = Allowlist.load(cwd)
 
+    excludes = args.exclude or []
     if args.baseline:
-        units = _units_from_baseline(cwd, rules)
+        units = _units_from_baseline(cwd, rules, excludes)
     else:
-        units = _units_from_diff(args.base, cwd, rules)
+        units = _units_from_diff(args.base, cwd, rules, excludes)
 
     verdict = engine.run(units, allow)
     _emit(verdict, args.format)
@@ -92,7 +103,7 @@ def _cmd_scan(args: argparse.Namespace) -> int:
 def _cmd_init(args: argparse.Namespace) -> int:
     cwd = args.repo
     rules = load_rules(cwd)
-    units = _units_from_disk(cwd, rules)
+    units = _units_from_disk(cwd, rules, args.exclude or [])
 
     # 1) allowlist: accept the commands currently present so they do not re-alert
     verdict = engine.run(units, allow=None)
@@ -126,15 +137,39 @@ def build_parser() -> argparse.ArgumentParser:
     scan.add_argument(
         "--format", choices=["pretty", "sarif"], default="pretty", help="output format"
     )
+    scan.add_argument(
+        "--exclude", action="append", metavar="GLOB",
+        help="skip paths matching this glob (repeatable; supports trailing /**)",
+    )
     scan.set_defaults(func=_cmd_scan)
 
     init = sub.add_parser("init", help="accept the current control surface as the allowlist")
     init.add_argument("--repo", default=".", help="repository path (default: .)")
+    init.add_argument(
+        "--exclude", action="append", metavar="GLOB",
+        help="skip paths matching this glob (repeatable; supports trailing /**)",
+    )
     init.set_defaults(func=_cmd_init)
     return p
 
 
+def _make_output_robust() -> None:
+    """Best-effort: scanned files may contain arbitrary (even invisible) characters.
+
+    On a non-UTF-8 console (e.g. Windows cp932) printing that evidence would raise
+    UnicodeEncodeError, so re-encode stdout/stderr as UTF-8 with replacement. Guarded
+    because some streams (test capture) do not support reconfigure.
+    """
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            if hasattr(stream, "reconfigure"):
+                stream.reconfigure(encoding="utf-8", errors="replace")
+        except Exception:  # noqa: BLE001 - never let output setup break the run
+            pass
+
+
 def main(argv: list[str] | None = None) -> int:
+    _make_output_robust()
     parser = build_parser()
     args = parser.parse_args(argv)
     try:
