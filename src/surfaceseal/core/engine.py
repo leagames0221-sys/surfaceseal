@@ -15,14 +15,17 @@ from .models import ChangeUnit, Verdict
 
 def run(units: Iterable[ChangeUnit], allow=None) -> Verdict:
     """Scan ``units`` and return a verdict, suppressing allowlisted findings."""
-    from ..packs import autorun
-    from ..surfaces import EXECUTABLE_FORMATS
+    from ..packs import autorun, injection
+    from ..surfaces import EXECUTABLE_FORMATS, INSTRUCTION_FORMATS
 
     verdict = Verdict()
     for unit in units:
-        # Only executable formats are scanned here; the instruction-injection
-        # (advisory) pack lands in Phase 2.
-        findings = autorun.scan(unit) if unit.fmt in EXECUTABLE_FORMATS else []
+        if unit.fmt in EXECUTABLE_FORMATS:
+            findings = autorun.scan(unit)
+        elif unit.fmt in INSTRUCTION_FORMATS:
+            findings = injection.scan(unit)  # advisory, capped at WARNING
+        else:
+            findings = []
         for finding in findings:
             if allow is not None and allow.permits(finding.surface.path, finding.evidence):
                 continue

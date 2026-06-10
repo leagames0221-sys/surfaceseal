@@ -15,9 +15,9 @@ import sys
 
 from . import gitdiff
 from .allowlist import Allowlist
-from .core import engine
+from .core import baseline, engine
 from .core.models import ChangeKind, ChangeUnit, Surface
-from .report import pretty
+from .report import pretty, sarif
 from .surfaces import SurfaceRule, classify, load_rules
 
 
@@ -53,20 +53,39 @@ def _units_from_disk(cwd: str, rules: list[SurfaceRule]) -> list[ChangeUnit]:
     return units
 
 
+def _units_from_baseline(cwd: str, rules: list[SurfaceRule]) -> list[ChangeUnit]:
+    """Build DRIFTED units for in-scope files new or changed vs the pinned baseline."""
+    pinned = baseline.load(cwd)
+    units: list[ChangeUnit] = []
+    for path in gitdiff.tracked_files(cwd):
+        rule = classify(path, rules)
+        if rule is None:
+            continue
+        text = gitdiff.read_head(path, cwd)
+        if text is None:
+            continue
+        if pinned and not baseline.is_drifted(pinned, path, text):
+            continue  # trusted and unchanged since the baseline was pinned
+        units.append(_unit_from(path, text, None, ChangeKind.DRIFTED, rule))
+    return units
+
+
+def _emit(verdict, fmt: str) -> None:
+    print(sarif.render(verdict) if fmt == "sarif" else pretty.render(verdict))
+
+
 def _cmd_scan(args: argparse.Namespace) -> int:
     cwd = args.repo
     rules = load_rules(cwd)
     allow = Allowlist.load(cwd)
 
     if args.baseline:
-        # Phase 2 wires the pinned-hash comparison; for now baseline re-scans the
-        # current surface against the allowlist (drift surfaces as un-allowlisted).
-        units = _units_from_disk(cwd, rules)
+        units = _units_from_baseline(cwd, rules)
     else:
         units = _units_from_diff(args.base, cwd, rules)
 
     verdict = engine.run(units, allow)
-    print(pretty.render(verdict))
+    _emit(verdict, args.format)
     return verdict.exit_code
 
 
@@ -74,13 +93,23 @@ def _cmd_init(args: argparse.Namespace) -> int:
     cwd = args.repo
     rules = load_rules(cwd)
     units = _units_from_disk(cwd, rules)
-    verdict = engine.run(units, allow=None)  # no allowlist: capture everything present
+
+    # 1) allowlist: accept the commands currently present so they do not re-alert
+    verdict = engine.run(units, allow=None)
     allow = Allowlist()
     for f in verdict.findings:
         if f.evidence:
             allow.add(f.surface.path, f.evidence)
-    out = allow.write(cwd)
-    print(f"surfaceseal: wrote {len(allow.scoped)} accepted entries to {out}")
+    allow_path = allow.write(cwd)
+
+    # 2) baseline: pin a content hash of every in-scope surface for drift detection
+    pinned = {u.surface.path: baseline.hash_text(u.head_text) for u in units}
+    base_path = baseline.write(cwd, pinned)
+
+    print(
+        f"surfaceseal: accepted {len(allow.scoped)} commands ({allow_path.name}); "
+        f"pinned {len(pinned)} surfaces ({base_path.name})"
+    )
     return 0
 
 
@@ -94,6 +123,9 @@ def build_parser() -> argparse.ArgumentParser:
     mode.add_argument("--baseline", action="store_true", help="re-check vs the pinned baseline")
     scan.add_argument("--base", default="HEAD~1", help="base ref for --diff (default: HEAD~1)")
     scan.add_argument("--repo", default=".", help="repository path (default: .)")
+    scan.add_argument(
+        "--format", choices=["pretty", "sarif"], default="pretty", help="output format"
+    )
     scan.set_defaults(func=_cmd_scan)
 
     init = sub.add_parser("init", help="accept the current control surface as the allowlist")

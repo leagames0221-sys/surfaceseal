@@ -18,3 +18,11 @@ All notable changes to this project are documented here. Format loosely follows
     `--baseline` modes, human-readable report, exit codes 0/1/2.
   - Miasma-scenario fixture + end-to-end git integration test (poisoned PR → exit 2).
   - 25 tests pass, ruff clean.
+- Phase 2 (breadth):
+  - `core/baseline`: pinned-hash drift detection; `scan --baseline` flags surfaces
+    new/changed vs the snapshot (worm re-commit vector), trusted-unchanged skipped.
+  - `surfaceseal init` now also pins a baseline manifest alongside the allowlist.
+  - `packs/injection`: advisory hidden-instruction signatures for `CLAUDE.md` /
+    `AGENTS.md` (capped at WARNING, never gates on its own).
+  - `report/sarif`: SARIF 2.1.0 output (`scan --format sarif`); advisory → `note`.
+  - 37 tests pass, ruff clean.
