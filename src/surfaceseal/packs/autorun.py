@@ -137,30 +137,36 @@ def scan(unit: ChangeUnit) -> list[Finding]:
     try:
         head = jsonc.loads(unit.head_text)
     except ValueError:
+        # An executable control surface the agent may still act on but we cannot
+        # parse fails closed (CRITICAL): a security gate must not wave through what
+        # it cannot read (a tolerant-but-not-spec reader can be deliberately tripped).
         return [
             Finding(
                 rule_id="SS-PARSE",
-                severity=Severity.WARNING,
+                severity=Severity.CRITICAL,
                 surface=unit.surface,
                 line=1,
-                message=f"control surface could not be parsed as JSON ({unit.surface.path})",
+                message=f"executable control surface could not be parsed ({unit.surface.path})",
             )
         ]
 
     head_cmds = extractor(head, unit.head_text)
 
-    base_cmd_set: set[str] = set()
+    # Suppression is keyed on (command, context, autorun), not the bare command:
+    # re-binding an existing command to a new/more-dangerous trigger is a *change*
+    # and must be flagged, not suppressed as "unchanged".
+    base_keys: set[tuple[str, str, bool]] = set()
     if unit.base_text is not None:
         try:
             base = jsonc.loads(unit.base_text)
-            base_cmd_set = {c.command for c in extractor(base, unit.base_text)}
+            base_keys = {(c.command, c.context, c.autorun) for c in extractor(base, unit.base_text)}
         except ValueError:
-            base_cmd_set = set()
+            base_keys = set()
 
     findings: list[Finding] = []
     for c in head_cmds:
-        if c.command in base_cmd_set:
-            continue  # unchanged since base - not introduced by this change
+        if (c.command, c.context, c.autorun) in base_keys:
+            continue  # identical command in the identical trigger context - unchanged
         sig = match_high_risk(c.command)
         if sig is not None:
             sev, rule_id, why = Severity.CRITICAL, sig.rule_id, sig.label
@@ -176,7 +182,7 @@ def scan(unit: ChangeUnit) -> list[Finding]:
                 surface=unit.surface,
                 line=c.line,
                 message=f"{why} in {c.context}",
-                evidence=c.command[:200],
+                evidence=c.command,  # full command; reporters truncate for display
             )
         )
     return findings

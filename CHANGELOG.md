@@ -34,3 +34,17 @@ All notable changes to this project are documented here. Format loosely follows
   - Fix: pretty reporter crashed on non-UTF-8 consoles (Windows cp932) when a finding
     carried non-ASCII evidence — output is now ASCII-chrome + UTF-8/replace stdout.
   - 43 tests pass, ruff clean.
+- Phase 3 hardening (adversarial review — false-negative fixes):
+  - **H1**: diff suppression is now keyed on (command, context, autorun), so
+    re-binding an existing command to a new/dangerous trigger is flagged, not masked.
+  - **H2**: allowlist matches the full command; evidence is no longer truncated
+    before matching (a >200-char prefix collision could previously smuggle a suffix).
+  - **H3**: an unparseable *executable* control surface now fails closed (CRITICAL),
+    not WARNING — a security gate must not wave through what it cannot read.
+  - **H4**: instruction-injection uses a multiset line diff, so a re-injected payload
+    line is not masked by one identical pre-existing line.
+  - **M1**: high-risk signatures extended — interpreter version suffixes (`python3`),
+    command-substitution exec (`bash -c "$(curl …)"`), `.env` credential path,
+    fetch-then-exec, exfil via `$( )` interpolation.
+  - **L1**: `init` warns that it accepts the surface as-is (trust-on-first-use).
+  - 48 tests pass (added evasion regression suite), ruff clean.

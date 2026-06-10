@@ -8,20 +8,31 @@ not to gate.
 
 from __future__ import annotations
 
+from collections import Counter
+
 from ..core.models import ChangeUnit, Finding, Severity
 from ..rules.injection_rules import scan_line
 
 
 def _added_lines(head_text: str, base_text: str | None) -> list[tuple[int, str]]:
-    """Return (1-based line number, text) for lines present in head but not base."""
+    """Return (1-based line number, text) for lines newly introduced by the change.
+
+    Uses a multiset diff rather than a plain set: if a payload line is re-injected,
+    a single identical line already in the base must not mask the new copy. A head
+    occurrence counts as "added" only once the base's occurrences are exhausted.
+    """
     if base_text is None:
-        return [(i + 1, ln) for i, ln in enumerate(head_text.splitlines())]
-    base_set = set(base_text.splitlines())
-    return [
-        (i + 1, ln)
-        for i, ln in enumerate(head_text.splitlines())
-        if ln not in base_set and ln.strip()
-    ]
+        return [(i + 1, ln) for i, ln in enumerate(head_text.splitlines()) if ln.strip()]
+    remaining = Counter(base_text.splitlines())
+    added: list[tuple[int, str]] = []
+    for i, ln in enumerate(head_text.splitlines()):
+        if not ln.strip():
+            continue
+        if remaining.get(ln, 0) > 0:
+            remaining[ln] -= 1  # this head line is covered by a base occurrence
+            continue
+        added.append((i + 1, ln))
+    return added
 
 
 def scan(unit: ChangeUnit) -> list[Finding]:

@@ -36,7 +36,9 @@ def render(verdict: Verdict) -> str:
             {
                 "ruleId": f.rule_id,
                 "level": _level(f),
-                "message": {"text": f.message + (f": {f.evidence}" if f.evidence else "")},
+                "message": {
+                    "text": f.message + (f": {f.evidence[:200]}" if f.evidence else "")
+                },
                 "locations": [
                     {
                         "physicalLocation": {

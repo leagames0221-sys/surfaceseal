@@ -121,6 +121,14 @@ def _cmd_init(args: argparse.Namespace) -> int:
         f"surfaceseal: accepted {len(allow.scoped)} commands ({allow_path.name}); "
         f"pinned {len(pinned)} surfaces ({base_path.name})"
     )
+    if allow.scoped:
+        # Trust-on-first-use: init endorses whatever executes today. If the repo is
+        # already compromised, that poison is being accepted — review before committing.
+        print(
+            "  note: this accepts the control surface AS-IS. Review "
+            f"{allow_path.name} before committing — anything already poisoned is now allowlisted.",
+            file=sys.stderr,
+        )
     return 0
 
 
