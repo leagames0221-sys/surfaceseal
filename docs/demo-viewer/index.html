@@ -64,8 +64,8 @@
 <section class="hero sec-hero">
   <div class="wrap">
     <span class="eyebrow">AI エージェント サプライチェーン防御 / PoC</span>
-    <h1><span class="hl">surfaceseal</span><br/>毒入りの設定変更を、<br/>世に出す前に止める。</h1>
-    <p class="lead">AI コーディングエージェントが自動で信頼する設定ファイル。<br/>その変更だけを検査し、毒が混ざったプルリクエストを出口で堰き止めます。</p>
+    <h1><span class="hl">surfaceseal</span><br/>不正な設定変更を、<br/>世に出す前に止める。</h1>
+    <p class="lead">AI コーディングエージェントが自動で信頼する設定ファイル。<br/>その変更だけを検査し、不正な変更が混ざったプルリクエストを出口で堰き止めます。</p>
     <p class="mono">diff-aware security merge gate · deterministic · local-first · runtime dependencies = 0</p>
   </div>
 </section>
@@ -77,10 +77,10 @@
     <p class="lead">リポジトリを開くと、AI 助手は中の指示ファイルや仕掛けを自動で読み、人間が見る前に実行します。</p>
     <ul>
       <li>そこに悪い指示を仕込んだプルリクエストが、実際の攻撃手口になりました</li>
-      <li>感染した開発者が、気づかぬまま自分のプロジェクトにも毒を書き込んで配布します</li>
+      <li>感染した開発者が、気づかぬまま自分のプロジェクトにも不正な仕掛けを書き込んで配布します</li>
       <li>こうして人から人へ自動で広がり、多数のリポジトリが停止に追い込まれました</li>
     </ul>
-    <p>既存の検査機は「取り込む側」を守りますが、「毒を出荷してしまう側」は空白でした。</p>
+    <p>既存の検査機は「取り込む側」を守りますが、「不正な変更を出荷してしまう側」は空白でした。</p>
   </div>
 </section>
 
@@ -156,7 +156,7 @@
 <section class="sec-ci">
   <div class="wrap">
     <h2><span class="n">CI GATE</span>ギットハブ上で<span class="ac">マージを止める</span></h2>
-    <p>毒入りの変更を含むプルリクエストは、終了コード 2 でチェックが失敗し、マージ自体を堰き止めます。結果は標準形式でも出力し、セキュリティ画面に並びます。</p>
+    <p>不正な変更を含むプルリクエストは、終了コード 2 でチェックが失敗し、マージ自体を堰き止めます。結果は標準形式でも出力し、セキュリティ画面に並びます。</p>
     <div class="term">
       <span class="pr">$</span> surfaceseal scan --diff --format sarif<br/>
       <span style="color:#64748b"># 標準形式（サリフ）で出力 → ギットハブのコードスキャンに表示</span><br/>
