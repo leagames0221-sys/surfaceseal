@@ -46,6 +46,8 @@ select = ["E", "F", "I", "UP", "B", "SIM"]
 [tool.ruff.lint.per-file-ignores]
 # Detection signatures are regex literals that do not read well when wrapped.
 "src/surfaceseal/rules/*" = ["E501"]
+# The demo-video build script holds long Japanese narration string literals.
+"scripts/*" = ["E501"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

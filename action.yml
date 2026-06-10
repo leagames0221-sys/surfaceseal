@@ -36,18 +36,26 @@ runs:
       run: python -m pip install "surfaceseal @ git+https://github.com/leagames0221-sys/surfaceseal"
     - name: Scan control-surface diff
       shell: bash
+      # Inputs are passed via env (never interpolated into the script body) so a
+      # crafted input value cannot break out and execute — on-brand for a security tool.
+      env:
+        IN_BASE: ${{ inputs.base }}
+        IN_PR_BASE: ${{ github.event.pull_request.base.sha }}
+        IN_FORMAT: ${{ inputs.format }}
+        IN_EXCLUDE: ${{ inputs.exclude }}
+        IN_FAIL_ON_WARNING: ${{ inputs.fail-on-warning }}
       run: |
-        BASE="${{ inputs.base }}"
+        BASE="$IN_BASE"
         if [ -z "$BASE" ]; then
-          BASE="${{ github.event.pull_request.base.sha || 'HEAD~1' }}"
+          BASE="${IN_PR_BASE:-HEAD~1}"
         fi
-        EXCLUDE_ARGS=""
-        for g in ${{ inputs.exclude }}; do EXCLUDE_ARGS="$EXCLUDE_ARGS --exclude $g"; done
+        EXCLUDE_ARGS=()
+        for g in $IN_EXCLUDE; do EXCLUDE_ARGS+=(--exclude "$g"); done
         set +e
-        surfaceseal scan --diff --base "$BASE" --format "${{ inputs.format }}" $EXCLUDE_ARGS
+        surfaceseal scan --diff --base "$BASE" --format "$IN_FORMAT" "${EXCLUDE_ARGS[@]}"
         code=$?
         set -e
         # exit 2 = critical always fails; exit 1 = warning fails only if requested
         if [ "$code" -eq 2 ]; then exit 1; fi
-        if [ "$code" -eq 1 ] && [ "${{ inputs.fail-on-warning }}" = "true" ]; then exit 1; fi
+        if [ "$code" -eq 1 ] && [ "$IN_FAIL_ON_WARNING" = "true" ]; then exit 1; fi
         exit 0

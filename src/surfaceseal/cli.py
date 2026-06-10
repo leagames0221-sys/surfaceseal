@@ -109,7 +109,9 @@ def _cmd_init(args: argparse.Namespace) -> int:
     verdict = engine.run(units, allow=None)
     allow = Allowlist()
     for f in verdict.findings:
-        if f.evidence:
+        # Only allowlist gating (structural) findings; advisory injection hints are
+        # WARNING-only and must keep surfacing, so they are not silenced here.
+        if f.evidence and not f.advisory:
             allow.add(f.surface.path, f.evidence)
     allow_path = allow.write(cwd)
 
