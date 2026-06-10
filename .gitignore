@@ -18,3 +18,7 @@ dist/
 .ruff_cache/
 .venv/
 venv/
+
+# ── video pipeline intermediates (final MP4 in video/out/ IS tracked) ──
+video/_temp/
+.vendor/

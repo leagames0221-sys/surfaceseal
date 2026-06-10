@@ -21,6 +21,12 @@ instruction — so you never ship the worm downstream.
 > [agents-shipgate](https://github.com/ThreeMoonsLab/agents-shipgate)). The two are
 > complementary: shipgate reviews tool readiness; surfaceseal reviews tampering.
 
+## Demo
+
+A ~100s narrated walkthrough (the Miasma-style poisoned PR → blocked merge is the
+through-line): [`video/out/surfaceseal_demo.mp4`](video/out/surfaceseal_demo.mp4).
+All on-screen data is synthetic; no real attack code is shown.
+
 ## Why diff-aware (and not a full scan)
 
 Existing agent scanners walk the whole tree and flag every config they find. As an

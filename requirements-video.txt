@@ -1,0 +1,4 @@
+# Demo-video pipeline only (not a runtime dependency of surfaceseal itself).
+# surfaceseal's CLI has zero runtime dependencies; these are for scripts/produce_video.py.
+playwright>=1.40,<2.0
+requests>=2.31,<3.0

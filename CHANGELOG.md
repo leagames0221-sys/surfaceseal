@@ -48,3 +48,7 @@ All notable changes to this project are documented here. Format loosely follows
     fetch-then-exec, exfil via `$( )` interpolation.
   - **L1**: `init` warns that it accepts the surface as-is (trust-on-first-use).
   - 48 tests pass (added evasion regression suite), ruff clean.
+- Phase 3 demo: narrated ~100s walkthrough (`video/out/surfaceseal_demo.mp4`,
+  1080p H.264, 11 scenes, burned-in subtitles) built with the automated TTS +
+  Playwright + ffmpeg pipeline; static demo viewer under `docs/demo-viewer/`.
+  Closes rubric #5 (visual demo evidence).
