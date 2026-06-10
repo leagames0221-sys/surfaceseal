@@ -1,0 +1,72 @@
+# Control-surface registry: which repo paths an AI coding agent auto-trusts,
+# which agent family they belong to, and which structural format they use.
+#
+# `format` selects the command extractor in surfaceseal.packs.autorun.
+# Users may ship their own surfaces.toml at repo root to extend this (M3).
+#
+# format values:
+#   claude_settings  - Claude Code settings.json (hooks.<event>[].hooks[].command)
+#   vscode_tasks     - VS Code / Cursor tasks.json (tasks[].command, runOptions.runOn)
+#   hooks_json       - Cursor / Codex hooks.json (hooks[].command)
+#   mcp_json         - MCP server config (mcpServers.<name>.command + args)
+#   instruction_md   - natural-language instruction file (advisory injection scan)
+
+[[surface]]
+match = ".claude/settings.json"
+agent = "claude-code"
+format = "claude_settings"
+
+[[surface]]
+match = ".claude/settings.local.json"
+agent = "claude-code"
+format = "claude_settings"
+
+[[surface]]
+match = "**/.mcp.json"
+agent = "mcp"
+format = "mcp_json"
+
+[[surface]]
+match = ".vscode/mcp.json"
+agent = "vscode"
+format = "mcp_json"
+
+[[surface]]
+match = ".vscode/tasks.json"
+agent = "vscode"
+format = "vscode_tasks"
+
+[[surface]]
+match = ".cursor/hooks.json"
+agent = "cursor"
+format = "hooks_json"
+
+[[surface]]
+match = ".codex/hooks.json"
+agent = "codex"
+format = "hooks_json"
+
+[[surface]]
+match = "CLAUDE.md"
+agent = "claude-code"
+format = "instruction_md"
+
+[[surface]]
+match = "AGENTS.md"
+agent = "codex"
+format = "instruction_md"
+
+[[surface]]
+match = "GEMINI.md"
+agent = "gemini"
+format = "instruction_md"
+
+[[surface]]
+match = ".cursorrules"
+agent = "cursor"
+format = "instruction_md"
+
+[[surface]]
+match = "**/copilot-instructions.md"
+agent = "copilot"
+format = "instruction_md"

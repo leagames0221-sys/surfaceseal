@@ -62,6 +62,22 @@ class Finding:
     evidence: str = ""
 
 
+@dataclass(frozen=True)
+class ChangeUnit:
+    """One in-scope surface plus the text needed to reason about its change.
+
+    ``base_text`` is ``None`` for ADDED files (everything is new) and for baseline
+    drift where the comparison happens against a pinned hash, not a prior text.
+    ``fmt`` is the structural format string from the surface registry (kept as a
+    plain ``str`` so the core stays free of any dependency on ``surfaces``).
+    """
+
+    surface: Surface
+    fmt: str
+    head_text: str
+    base_text: str | None = None
+
+
 @dataclass
 class Verdict:
     """Aggregate result of a scan."""
