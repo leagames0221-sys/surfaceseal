@@ -1,0 +1,21 @@
+# ── PRIVATE track (dual-track leak defense, never commit) ──────────────
+.claude/
+.tmp/
+.env
+.env.*
+notes/private/
+internal_notes/
+memory_bank/
+
+# ── Python ─────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.pytest_cache/
+.ruff_cache/
+.venv/
+venv/
+*.baseline.json
