@@ -1,11 +1,13 @@
 # ── PRIVATE track (dual-track leak defense, never commit) ──────────────
-.claude/
-.tmp/
+# Anchored to repo root so they do NOT swallow test fixtures that legitimately
+# contain agent control-surface files (e.g. tests/fixtures/**/.claude/...).
+/.claude/
+/.tmp/
 .env
 .env.*
-notes/private/
-internal_notes/
-memory_bank/
+/notes/private/
+/internal_notes/
+/memory_bank/
 
 # ── Python ─────────────────────────────────────────────────────────────
 __pycache__/

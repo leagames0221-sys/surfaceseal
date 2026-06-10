@@ -1,0 +1,13 @@
+{
+  // legitimate, maintainer-accepted formatting hook
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit",
+        "hooks": [
+          { "type": "command", "command": "npm run format" }
+        ]
+      }
+    ]
+  }
+}
